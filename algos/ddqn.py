@@ -17,11 +17,14 @@ class DDQN(object):
         self.actor_optim = Adam(self.actor.parameters(), lr=args.actor_lr)
 
         self.actor_target = model_constructor.make_model('CategoricalPolicy').to(device=self.device)
-        hard_update(self.actor_target, self.actor)
+        hard_update(self.actor_target, self.actor)       
 
         self.log_softmax = torch.nn.LogSoftmax(dim=1)
         self.softmax = torch.nn.Softmax(dim=1)
         self.num_updates = 0
+
+        print('1',self.actor)
+        print('2',self.actor_optim)
 
     def update_parameters(self, state_batch, next_state_batch, action_batch, reward_batch, done_batch):
 

@@ -18,7 +18,7 @@ class ERL_Trainer:
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 		#Evolution
-		self.evolver = SSNE(self.args)
+		self.evolver = (self.args)
 
 		#Initialize population
 		self.population = self.manager.list()
@@ -44,6 +44,7 @@ class ERL_Trainer:
 		for _ in range(args.rollout_size):
 			self.rollout_bucket.append(model_constructor.make_model(self.policy_string))
 
+
 		############## MULTIPROCESSING TOOLS ###################
 		#Evolutionary population Rollout workers
 		self.evo_task_pipes = [Pipe() for _ in range(args.pop_size)]
@@ -52,6 +53,7 @@ class ERL_Trainer:
 		for worker in self.evo_workers: worker.start()
 		self.evo_flag = [True for _ in range(args.pop_size)]
 
+
 		#Learner rollout workers
 		self.task_pipes = [Pipe() for _ in range(args.rollout_size)]
 		self.result_pipes = [Pipe() for _ in range(args.rollout_size)]
@@ -59,9 +61,11 @@ class ERL_Trainer:
 		for worker in self.workers: worker.start()
 		self.roll_flag = [True for _ in range(args.rollout_size)]
 
+
 		#Test bucket
 		self.test_bucket = self.manager.list()
 		self.test_bucket.append(model_constructor.make_model(self.policy_string))
+
 
 		# Test workers
 		self.test_task_pipes = [Pipe() for _ in range(args.num_test)]
@@ -70,9 +74,9 @@ class ERL_Trainer:
 		for worker in self.test_workers: worker.start()
 		self.test_flag = False
 
+
 		#Trackers
 		self.best_score = -float('inf'); self.gen_frames = 0; self.total_frames = 0; self.test_score = None; self.test_std = None
-
 
 	def forward_generation(self, gen, tracker):
 
@@ -108,14 +112,16 @@ class ERL_Trainer:
 		########## JOIN ROLLOUTS FOR EVO POPULATION ############
 		all_fitness = []; all_eplens = []
 		if self.args.pop_size > 1:
-			for i in range(self.args.pop_size):
+			for i in range(self.args.pop_size):				
 				_, fitness, frames, trajectory = self.evo_result_pipes[i][1].recv()
-
 				all_fitness.append(fitness); all_eplens.append(frames)
 				self.gen_frames+= frames; self.total_frames += frames
 				self.replay_buffer.add(trajectory)
 				self.best_score = max(self.best_score, fitness)
 				gen_max = max(gen_max, fitness)
+
+				print('best_score',self.best_score)
+				print('gen_max',gen_max)
 
 		########## JOIN ROLLOUTS FOR LEARNER ROLLOUTS ############
 		rollout_fitness = []; rollout_eplens = []
@@ -162,8 +168,8 @@ class ERL_Trainer:
 
 
 		#NeuroEvolution's probabilistic selection and recombination step
-		if self.args.pop_size > 1:
-			self.evolver.epoch(gen, self.population, all_fitness, self.rollout_bucket)
+		# if self.args.pop_size > 1:
+		# 	self.evolver.epoch(gen, self.population, all_fitness, self.rollout_bucket)
 
 		#Compute the champion's eplen
 		champ_len = all_eplens[all_fitness.index(max(all_fitness))] if self.args.pop_size > 1 else rollout_eplens[rollout_fitness.index(max(rollout_fitness))]
@@ -180,6 +186,8 @@ class ERL_Trainer:
 		for gen in range(1, 1000000000):  # Infinite generations
 
 			# Train one iteration
+			print('gen-->',gen)
+			print('test_tracker-->',test_tracker)
 			max_fitness, champ_len, all_eplens, test_mean, test_std, rollout_fitness, rollout_eplens = self.forward_generation(gen, test_tracker)
 			if test_mean: self.args.writer.add_scalar('test_score', test_mean, gen)
 

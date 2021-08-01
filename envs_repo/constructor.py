@@ -21,7 +21,6 @@ class EnvConstructor:
         self.state_dim = dummy_env.state_dim
         self.action_dim = dummy_env.action_dim
 
-
     def make_env(self, **kwargs):
         """
         Generate and return an env object

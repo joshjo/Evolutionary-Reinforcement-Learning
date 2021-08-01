@@ -1,7 +1,7 @@
 
 import numpy as np
 import gym
-
+gym.logger.set_level(40)
 
 class GymWrapper:
     """Wrapper around the Environment to expose a cleaner interface for RL

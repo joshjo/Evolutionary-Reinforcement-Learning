@@ -12,7 +12,7 @@ parser.add_argument('--env', type=str, help='Env Name',  default='Pendulum-v0')
 parser.add_argument('--seed', type=int, help='Seed', default=991)
 parser.add_argument('--savetag', type=str, help='#Tag to append to savefile',  default='')
 parser.add_argument('--gpu_id', type=int, help='#GPU ID ',  default=0)
-parser.add_argument('--total_steps', type=float, help='#Total steps in the env in millions ', default=2)
+parser.add_argument('--total_steps', type=float, help='#Total steps in the env in millions ', default=0.001)#2)
 parser.add_argument('--buffer', type=float, help='Buffer size in million',  default=1.0)
 parser.add_argument('--frameskip', type=int, help='Frameskip',  default=1)
 
@@ -32,24 +32,27 @@ parser.add_argument('--rollsize', type=int, help='#Policies in rollout size',  d
 parser.add_argument('--gradperstep', type=float, help='#Gradient step per env step',  default=1.0)
 parser.add_argument('--num_test', type=int, help='#Test envs to average on',  default=5)
 
+
 #Figure out GPU to use [Default is 0]
 os.environ['CUDA_VISIBLE_DEVICES']=str(vars(parser.parse_args())['gpu_id'])
 
 #######################  Construct ARGS Class to hold all parameters ######################
 args = Parameters(parser)
+print('args--->',args)
 
 #Set seeds
 torch.manual_seed(args.seed); np.random.seed(args.seed); random.seed(args.seed)
 
 ################################## Find and Set MDP (environment constructor) ########################
 env_constructor = EnvConstructor(args.env_name, args.frameskip)
-
+print('env_constructor--->',env_constructor)
 
 #######################  Actor, Critic and ValueFunction Model Constructor ######################
 model_constructor = ModelConstructor(env_constructor.state_dim, env_constructor.action_dim, args.hidden_size)
-
+print('model_constructor--->',model_constructor)
 
 ai = ERL_Trainer(args, model_constructor, env_constructor)
+print('total_steps',args.total_steps)
 ai.train(args.total_steps)
 
 
