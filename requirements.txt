@@ -1,0 +1,5 @@
+torch==1.2.0
+numpy==1.18.1
+gym==0.15.6
+Mujoco-py==1.50.1.59
+tensorboard==2.5.0
