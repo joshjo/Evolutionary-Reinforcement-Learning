@@ -15,6 +15,58 @@ class SSNE:
 		self.rl_policy = None
 		self.selection_stats = {'elite': 0, 'selected': 0, 'discarded': 0, 'total': 0}
 
+	def convert_matrix_rank(self, index_rank, row=2):
+		"Divider index_rank to matrix"
+		total_rank = len(index_rank)
+		result = []
+		if total_rank >= row:
+			if total_rank % row == 0:
+				result = np.reshape(index_rank, (row, total_rank/row))
+			else:
+				new_row = row+1
+				self.convert_matrix_rank(index_rank,new_row)
+		return result
+
+	def neighborhood(self, matrix_rank):
+		"Return neighborhood from matrix"
+		total_matrix_x = matrix_rank.shape[0]-1
+		total_matrix_y = matrix_rank.shape[1]-1
+		random_x = np.min(np.random.randint(0, total_matrix_x))
+		random_y = np.min(np.random.randint(0, total_matrix_y))
+		random_position = matrix_rank[random_x,random_y]
+
+		left = 0
+		right = 0
+		up = 0
+		down = 0
+		# left neighborhood
+		print('left--->',matrix_rank[random_x,total_matrix_y])
+		if random_y == 0:
+			left = matrix_rank[random_x][total_matrix_y]
+		else:
+			left = matrix_rank[random_x][random_y-1]
+
+		#right neighborhood
+		if random_y == total_matrix_y:
+			right = matrix_rank[random_x][0]
+		else:
+			right = matrix_rank[random_x][random_y+1]
+
+		#up neighborhood
+		if random_x == 0:
+			up = matrix_rank[total_matrix_x][random_y]
+		else:
+			up = matrix_rank[random_x-1][random_y]
+
+		#down neighborhood
+		if random_x == total_matrix_x:
+			down = matrix_rank[0][random_y]
+		else:
+			down = matrix_rank[random_x+1][random_y]
+
+		result = [left,right,up,down]
+		return result
+
 
 	def selection_tournament(self, index_rank, num_offsprings, tournament_size):
 		"""Conduct tournament selection
@@ -29,12 +81,23 @@ class SSNE:
 
 		"""
 
+		# matrix_rank = self.convert_matrix_rank(index_rank,2)
+		matrix_rank = np.reshape(index_rank, (2, 5))
+		list_neighborhood = self.neighborhood(matrix_rank)
+		print('list_neighborhood--->',list_neighborhood)
 
 		total_choices = len(index_rank)
 		offsprings = []
-		for i in range(num_offsprings):
-			winner = np.min(np.random.randint(total_choices, size=tournament_size))
+		# for i in range(num_offsprings):
+		# 	winner = np.min(np.random.randint(total_choices, size=tournament_size))
+		# 	offsprings.append(index_rank[winner])
+
+		#search into neighborhood
+		total_list_neighborhood = len(list_neighborhood)
+		for i in range(total_list_neighborhood):
+			winner = np.min(np.random.randint(total_list_neighborhood, size=tournament_size))
 			offsprings.append(index_rank[winner])
+
 
 		offsprings = list(set(offsprings))  # Find unique offsprings
 		if len(offsprings) % 2 != 0:  # Number of offsprings should be even
@@ -202,6 +265,10 @@ class SSNE:
 
 	def epoch(self, gen, pop, fitness_evals, migration):
 
+		print('gen-->',gen)
+		print('population-->',pop)
+		print('all_fitness-->',fitness_evals)
+		print('migration-->',migration)
 
 		self.gen+= 1; num_elitists = int(self.args.elite_fraction * len(fitness_evals))
 		if num_elitists < 2: num_elitists = 2

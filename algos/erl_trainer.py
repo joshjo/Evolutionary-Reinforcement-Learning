@@ -18,7 +18,7 @@ class ERL_Trainer:
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 		#Evolution
-		self.evolver = (self.args)
+		self.evolver = SSNE(self.args)
 
 		#Initialize population
 		self.population = self.manager.list()
@@ -112,7 +112,7 @@ class ERL_Trainer:
 		########## JOIN ROLLOUTS FOR EVO POPULATION ############
 		all_fitness = []; all_eplens = []
 		if self.args.pop_size > 1:
-			for i in range(self.args.pop_size):				
+			for i in range(self.args.pop_size):
 				_, fitness, frames, trajectory = self.evo_result_pipes[i][1].recv()
 				all_fitness.append(fitness); all_eplens.append(frames)
 				self.gen_frames+= frames; self.total_frames += frames
@@ -167,9 +167,9 @@ class ERL_Trainer:
 			test_mean, test_std = None, None
 
 
-		#NeuroEvolution's probabilistic selection and recombination step
-		# if self.args.pop_size > 1:
-		# 	self.evolver.epoch(gen, self.population, all_fitness, self.rollout_bucket)
+		# NeuroEvolution's probabilistic selection and recombination step
+		if self.args.pop_size > 1:
+			self.evolver.epoch(gen, self.population, all_fitness, self.rollout_bucket)
 
 		#Compute the champion's eplen
 		champ_len = all_eplens[all_fitness.index(max(all_fitness))] if self.args.pop_size > 1 else rollout_eplens[rollout_fitness.index(max(rollout_fitness))]
