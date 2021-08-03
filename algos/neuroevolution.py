@@ -40,7 +40,6 @@ class SSNE:
 		up = 0
 		down = 0
 		# left neighborhood
-		print('left--->',matrix_rank[random_x,total_matrix_y])
 		if random_y == 0:
 			left = matrix_rank[random_x][total_matrix_y]
 		else:
