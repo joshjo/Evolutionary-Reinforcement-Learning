@@ -264,11 +264,6 @@ class SSNE:
 
 	def epoch(self, gen, pop, fitness_evals, migration):
 
-		print('gen-->',gen)
-		print('population-->',pop)
-		print('all_fitness-->',fitness_evals)
-		print('migration-->',migration)
-
 		self.gen+= 1; num_elitists = int(self.args.elite_fraction * len(fitness_evals))
 		if num_elitists < 2: num_elitists = 2
 
@@ -301,6 +296,7 @@ class SSNE:
 			self.writer.add_scalar('elite_rate', self.selection_stats['elite']/self.selection_stats['total'], gen)
 			self.writer.add_scalar('selection_rate', (self.selection_stats['elite']+self.selection_stats['selected'])/self.selection_stats['total'], gen)
 			self.writer.add_scalar('discard_rate', self.selection_stats['discarded']/self.selection_stats['total'], gen)
+
 
 		#Inheritance step (sync learners to population) --> Migration
 		for policy in migration:

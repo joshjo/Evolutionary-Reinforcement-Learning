@@ -10,7 +10,7 @@ env.reset()
 #Number of frames
 goal_steps = 500
 score_requirement = 50
-initial_games = 1000
+initial_games = 2000000
 
 def create_data():
     training_data, scores, accepted_scores = [], [], []
@@ -41,7 +41,9 @@ def create_data():
 
     print('Average accepted score:', mean(accepted_scores))
     print('Median accepted score:', median(accepted_scores))
-
+    print('len training_data--->',len(training_data))
+    print('len scores--->',len(scores))
+    print('len accepted_scores--->',len(accepted_scores))
     return training_data
 
 def create_initial_pop(pop_size):
@@ -74,7 +76,6 @@ def selection(population, fitness, num_parents):
     for i in range(num_parents):
         max_fitness_idx = np.where(fitness == np.max(fitness))
         parents[i,:] = population[max_fitness_idx[0][0], :]
-        # fitness[max_fitness_idx[0][0]] = -999999
         fitness[max_fitness_idx[0][0]] = -999999
     return parents
 
@@ -113,7 +114,10 @@ def GA_model(training_data):
     X = np.array([i[0] for i in training_data])
     y = np.array([i[1] for i in training_data]).reshape(-1, 1)
 
-    weights, fitness_history, list_selected, times = [], [], [],[]
+    print('X--->',X)
+    print('len X--->',len(X))
+
+    weights, fitness_history, list_selected, test_mean, times = [], [], [], [], []
     num_solutions = 2
     pop_size = (num_solutions, X.shape[1])
     num_parents = int(pop_size[0]/2)
@@ -128,9 +132,10 @@ def GA_model(training_data):
         fitness = cal_fitness(population, X, y, pop_size)
         fitness_history.append(fitness)
         parents = selection(population, fitness, num_parents)
-        list_selected.append(np.max(parents)+np.max(fitness))
         offsprings = crossover(parents, num_offsprings)
         mutants = mutation(offsprings)
+        list_selected.append(np.max(mutants))
+        test_mean.append(np.mean(mutants))
         population[0:parents.shape[0], :] = parents
         population[parents.shape[0]:, :] = mutants
         times.append(time.time()-time_start)
@@ -138,7 +143,7 @@ def GA_model(training_data):
     fitness_last_gen = cal_fitness(population, X, y, pop_size)
     max_fitness = np.where(fitness_last_gen == np.max(fitness_last_gen))
     weights.append(population[max_fitness[0][0],:])
-    return weights, fitness_history, list_selected, times
+    return weights, fitness_history, list_selected, test_mean, times
 
 def GA_model_predict(test_data, weights):
     hx = sigmoid(test_data@(weights).T)
@@ -147,7 +152,7 @@ def GA_model_predict(test_data, weights):
     return pred[0][0]
 
 training_data = create_data()
-weights, fitness_history, parents, times = GA_model(training_data)
+weights, fitness_history, selected, test_mean, times = GA_model(training_data)
 print('Weights: {}'.format(weights))
 weights = np.asarray(weights)
 num_generations = 150
@@ -161,17 +166,21 @@ plt.title('Fitness through the generations')
 plt.xlabel('Generations')
 plt.ylabel('Fitness')
 plt.show()
-plt.plot(list(range(num_generations)), parents, label = 'Max Selection')
+plt.plot(list(range(num_generations)), selected, label = 'Max Selection')
 plt.legend()
 plt.title('Selection through the generations')
 plt.xlabel('Generations')
 plt.ylabel('Selection')
 plt.show()
-plt.plot(list(range(num_generations)), times, label = 'Max Selection')
+plt.plot(list(range(num_generations)), times, label = 'Time')
 plt.legend()
 plt.title('Time through the generations')
 plt.xlabel('Generations')
 plt.ylabel('Time')
 plt.show()
-
-
+plt.plot(list(range(num_generations)), test_mean, label = 'Mean Test')
+plt.legend()
+plt.title('Test through the generations')
+plt.xlabel('Generations')
+plt.ylabel('Test')
+plt.show()
