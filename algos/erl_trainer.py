@@ -186,16 +186,20 @@ class ERL_Trainer:
 		for gen in range(1, 1000000000):  # Infinite generations
 
 			# Train one iteration
-			print('gen-->',gen)
-			print('test_tracker-->',test_tracker)
+
 			max_fitness, champ_len, all_eplens, test_mean, test_std, rollout_fitness, rollout_eplens = self.forward_generation(gen, test_tracker)
-			if test_mean: self.args.writer.add_scalar('test_score', test_mean, gen)
+			if test_mean:
+				print('test_mean--->',test_mean)
+				self.args.writer.add_scalar('test_score', test_mean, gen)
+				self.args.writer.add_scalar('time', test_mean,(time.time()-time_start))
+
 
 			print('Gen/Frames:', gen,'/',self.total_frames,
 				  ' Gen_max_score:', '%.2f'%max_fitness,
 				  ' Champ_len', '%.2f'%champ_len, ' Test_score u/std', utils.pprint(test_mean), utils.pprint(test_std),
 				  ' Rollout_u/std:', utils.pprint(np.mean(np.array(rollout_fitness))), utils.pprint(np.std(np.array(rollout_fitness))),
 				  ' Rollout_mean_eplen:', utils.pprint(sum(rollout_eplens)/len(rollout_eplens)) if rollout_eplens else None)
+			print('Time:',(time.time()-time_start))
 
 			if gen % 5 == 0:
 				print('Best_score_ever:''/','%.2f'%self.best_score, ' FPS:','%.2f'%(self.total_frames/(time.time()-time_start)), 'savetag', self.args.savetag)

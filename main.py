@@ -12,7 +12,7 @@ parser.add_argument('--env', type=str, help='Env Name',  default='Pendulum-v0')
 parser.add_argument('--seed', type=int, help='Seed', default=991)
 parser.add_argument('--savetag', type=str, help='#Tag to append to savefile',  default='')
 parser.add_argument('--gpu_id', type=int, help='#GPU ID ',  default=0)
-parser.add_argument('--total_steps', type=float, help='#Total steps in the env in millions ', default=0.001)#2)
+parser.add_argument('--total_steps', type=float, help='#Total steps in the env in millions ', default=2)
 parser.add_argument('--buffer', type=float, help='Buffer size in million',  default=1.0)
 parser.add_argument('--frameskip', type=int, help='Frameskip',  default=1)
 
