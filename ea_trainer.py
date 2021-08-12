@@ -1,16 +1,20 @@
+from array import array
 import gym
+import gym_anytrading
 import random
 import numpy as np, time
 import matplotlib.pyplot as plt
 from random import randint
 from statistics import mean, median
 from collections import Counter
-env = gym.make("CartPole-v0")
+# env = gym.make("CartPole-v0")
+# env = gym.make('forex-v0')
+env = gym.make('stocks-v0')
 env.reset()
 #Number of frames
 goal_steps = 500
 score_requirement = 50
-initial_games = 2000000
+initial_games = 1000
 
 def create_data():
     training_data, scores, accepted_scores = [], [], []
@@ -41,15 +45,20 @@ def create_data():
 
     print('Average accepted score:', mean(accepted_scores))
     print('Median accepted score:', median(accepted_scores))
-    print('len training_data--->',len(training_data))
-    print('len scores--->',len(scores))
-    print('len accepted_scores--->',len(accepted_scores))
     return training_data
 
-def create_initial_pop(pop_size):
-    initial_pop = np.random.uniform(low = -2.0, high = 2.0, size = pop_size)
-    print('Initial Population:\n{}'.format(initial_pop))
-    return initial_pop
+def create_initial_pop(pop_size, internal_pop_size):
+    initial_population = []
+    if internal_pop_size > 0:
+        for j in range(0,pop_size[0]):
+                initial_population.append(np.random.uniform(low = -2.0, high = 2.0,size = (pop_size[1],internal_pop_size)))
+
+        print('Initial Population IN:\n{}'.format(np.array(initial_population)))
+        return np.array(initial_population)
+    else:
+        initial_pop = np.random.uniform(low = -2.0, high = 2.0, size = pop_size)
+        print('Initial Population:\n{}'.format(initial_pop))
+        return initial_pop
 
 def sigmoid(z):
     return 1/(1+np.exp(-z))
@@ -70,14 +79,20 @@ def cal_fitness(population, X, y, pop_size):
         fitness[i][0] = np.sum(hx)
     return fitness
 
-def selection(population, fitness, num_parents):
+def selection(population, fitness, num_parents, internal_pop_size):
     fitness = list(fitness)
     parents = np.empty((num_parents, population.shape[1]))
+    parents_change = []
     for i in range(num_parents):
         max_fitness_idx = np.where(fitness == np.max(fitness))
-        parents[i,:] = population[max_fitness_idx[0][0], :]
+        if internal_pop_size > 0:
+            max_population = [np.max(p) for p in population[max_fitness_idx[0][0]]]
+            parents[i,:] = max_population[max_fitness_idx[0][0]:]
+            parents_change = population[max_fitness_idx[0][0], :]
+        else:
+            parents[i,:] = population[max_fitness_idx[0][0], :]
         fitness[max_fitness_idx[0][0]] = -999999
-    return parents
+    return parents, parents_change
 
 def crossover(parents, num_offsprings):
     offsprings = np.empty((num_offsprings, parents.shape[1]))
@@ -114,30 +129,35 @@ def GA_model(training_data):
     X = np.array([i[0] for i in training_data])
     y = np.array([i[1] for i in training_data]).reshape(-1, 1)
 
-    print('X--->',X)
-    print('len X--->',len(X))
-
     weights, fitness_history, list_selected, test_mean, times = [], [], [], [], []
     num_solutions = 2
     pop_size = (num_solutions, X.shape[1])
     num_parents = int(pop_size[0]/2)
     num_offsprings = pop_size[0] - num_parents
     num_generations = 150
+    internal_pop_size = 0
 
-    population = create_initial_pop(pop_size)
+    if isinstance(X[0][0],(list, tuple, np.ndarray)):
+        internal_pop_size = len(X[0][0])
+
+    population = create_initial_pop(pop_size, internal_pop_size)
+
     time_start = time.time()
 
 
     for i in range(num_generations):
         fitness = cal_fitness(population, X, y, pop_size)
         fitness_history.append(fitness)
-        parents = selection(population, fitness, num_parents)
+        parents, parents_change = selection(population, fitness, num_parents,internal_pop_size)
         offsprings = crossover(parents, num_offsprings)
         mutants = mutation(offsprings)
         list_selected.append(np.max(mutants))
         test_mean.append(np.mean(mutants))
-        population[0:parents.shape[0], :] = parents
-        population[parents.shape[0]:, :] = mutants
+        if internal_pop_size > 0:
+            population[0:parents.shape[0]] = parents_change
+        else:
+            population[0:parents.shape[0], :] = parents
+            population[parents.shape[0]:, :] = mutants
         times.append(time.time()-time_start)
 
     fitness_last_gen = cal_fitness(population, X, y, pop_size)
@@ -159,6 +179,7 @@ num_generations = 150
 
 fitness_history_mean = [np.mean(fitness) for fitness in fitness_history]
 fitness_history_max = [np.max(fitness) for fitness in fitness_history]
+# print('fitness_history--->',fitness_history)
 plt.plot(list(range(num_generations)), fitness_history_mean, label = 'Mean Fitness')
 plt.plot(list(range(num_generations)), fitness_history_max, label = 'Max Fitness')
 plt.legend()
@@ -184,3 +205,5 @@ plt.title('Test through the generations')
 plt.xlabel('Generations')
 plt.ylabel('Test')
 plt.show()
+
+
